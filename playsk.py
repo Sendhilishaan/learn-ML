@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold, cross_val_score
 from sklearn.metrics import mean_absolute_error
 import kagglehub
 
@@ -17,23 +17,41 @@ y = melbourne_data.Price
 x = melbourne_data[['Rooms']]
 
 """
-Using sklearn's train_test_split() method to split our data into training and validation data
-we will use 80% of our data for training and 20% for validation
+To improve our splitting and training / testing of our model, we can instead use K-fold CV
+train_test_split is not optimal as:
+    - the random sample trained on may be biased
+    - might overfit to the whole test set
+    - small changes in the split may change performance drastically
 
-This is done to avoid overfitting our model, but is not the most optimal way to do so since we 
-are only training the model on a single split of the data when we could do multiple iterations of 
-splitting and training.   
+K-fold Cv allows us to split the model into k equal parts, fitting the model on k-1 parts and testing
+on the kth subset. This process is then repeated k times so that the final performance score is the
+average of all scores.
+    - this results in a stable estimate of the model
+    - less risk of a bad random split
+    - no single test set, harder to overfit
+
 """
-train_x, val_x, train_y, val_y = train_test_split(x, y, random_state=1)
+
+kf = KFold(n_splits=5, shuffle=True, random_state=42)
 
 # creating the decsision tree objecting and training it on the training data from above
 model = DecisionTreeRegressor(random_state=1)
-model.fit(train_x, train_y)
 
-# predicting values of the validation data
-predictions = model.predict(val_x)
+"""
+we can use cross_val_score to automate the proccess once we have our KFold object. This function
+splits our data using a cross validation (kf in our case), trains, tests, and returns a numpy array of 
+all the scores from each fold
+"""
+scores = cross_val_score(model, x, y, cv=kf, scoring='neg_mean_absolute_error')
 
-# Calculating the MAE (average of the sum of the differences between prediction and actual value (mouthful))
-print(mean_absolute_error(val_y, predictions))
+print(scores)
 
-# the output is ~380236.6. How can we improve?
+"""
+This results in [-384217.14991043 -394535.25636982 -371254.0944823  -386999.7817237
+ -392045.69796707]
+
+ Which highlights how much the scores vary from each split and why CV is helpful
+
+ We are only using one feature, how do we input categorical data?
+    - decision trees are feature hungry, we need to find more splits for the model
+"""
