@@ -64,4 +64,5 @@ outputs [-247684.81806187 -252741.15885361 -244061.93189833 -250398.218159
  which is ALOT closer than before (probably because we aren't only using 1 feature)
 
  next time: implement the rest of the features, feature engineering? random forest
+    - fix the obvious underfitting
 """
